@@ -44,8 +44,9 @@ jobs:
 
       - name: Varredura de termos
         run: |
-          if grep -rEi "TODO|FIXME|senha|password" . --exclude-dir=.git; then
-            echo "Termos proibidos encontrados"
+          # Adicionamos --exclude-dir=.github para a pipeline não se auto-barrar
+          if grep -rEi "TODO|FIXME|senha|password" . --exclude-dir={.git,.github}; then
+            echo "ERRO: Termos proibidos encontrados no código fonte!"
             exit 1
           fi
 

@@ -50,6 +50,15 @@ jobs:
             exit 1
           fi
 
+      - name: Notificar Falha no Discord
+        if: failure() # Esta linha garante que só rode se algo der errado
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ job.status }}
+          content: "Atenção David! O deploy do seu portfólio falhou na branch main."
+          title: "❌ Falha na Pipeline de Produção"
+
   deploy:
     needs: lint-and-validate
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

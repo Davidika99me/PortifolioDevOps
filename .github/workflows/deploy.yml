@@ -12,12 +12,11 @@ permissions:
   id-token: write
 
 jobs:
-  # ETAPA 1: CI - Integração Contínua (Validação)
   lint-and-validate:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        [cite_start]node-version: [18, 20] # Etapa 5: Matrix Strategy [cite: 50]
+        node-version: [18, 20]
     
     steps:
       - name: Checkout do código
@@ -28,27 +27,41 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # Verificação obrigatória do index.html na raiz [cite: 21, 22]
-      - name: Verificar existência do index.html
+      - name: Verificar index.html
         run: |
           if [ ! -f index.html ]; then
-            echo "ERRO: Arquivo index.html não encontrado na raiz!"
+            echo "ERRO: index.html nao encontrado"
             exit 1
           fi
 
-      # Bloqueio de arquivos maiores que 500KB [cite: 30]
-      - name: Verificar tamanho dos arquivos (Max 500KB)
+      - name: Verificar tamanho arquivos
         run: |
           LARGE_FILES=$(find . -type f -not -path '*/.*' -size +500k)
           if [ ! -z "$LARGE_FILES" ]; then
-            echo "ERRO: Arquivos excedem 500KB: $LARGE_FILES"
+            echo "Arquivos excedem 500KB: $LARGE_FILES"
             exit 1
           fi
 
-      # Varredura de termos sensíveis e comentários proibidos [cite: 31]
-      - name: Varredura de termos proibidos (TODO, FIXME, senha)
+      - name: Varredura de termos
         run: |
           if grep -rEi "TODO|FIXME|senha|password" . --exclude-dir=.git; then
-            echo "ERRO: Termos sensíveis ou comentários proibidos encontrados!"
+            echo "Termos proibidos encontrados"
             exit 1
           fi
+
+  deploy:
+    needs: lint-and-validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
